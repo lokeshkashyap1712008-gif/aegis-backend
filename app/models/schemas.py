@@ -1,6 +1,7 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class LogRequest(BaseModel):
-    identifier: str
-    code: int
-    response_time: float
+    identifier: Optional[str] = None
+    code: Optional[int] = None
+    response_time: Optional[float] = None
