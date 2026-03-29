@@ -7,4 +7,4 @@ const API = axios.create({
 
 export const getNodes = () => API.get("/nodes");
 export const getAlerts = () => API.get("/alerts");
-export const getLatency = () => API.get("/metrics/latency");
+export const getLatency = () => API.get("/metrics");

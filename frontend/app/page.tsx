@@ -1,6 +1,19 @@
 "use client";
+<div className="flex justify-between items-center mb-4">
+  <h1 className="text-3xl font-bold text-blue-400">
+    🧠 AEGIS CONTROL CENTER
+  </h1>
 
-import NodeMap from "../components/map/NodeMap";
+  <div className="text-green-400 text-sm">
+    ● SYSTEM ONLINE
+  </div>
+</div>
+import dynamic from "next/dynamic";
+
+const RealTimeMap = dynamic(
+  () => import("../components/map/RealTimeMap"),
+  { ssr: false }
+);
 import AlertsPanel from "../components/alerts/AlertsPanel";
 import LatencyHeatmap from "../components/heatmap/LatencyHeatmap";
 
@@ -14,9 +27,24 @@ export default function Page() {
 
   return (
     <div className="p-6 space-y-6">
-      <NodeMap nodes={nodes} />
-      <AlertsPanel alerts={alerts} />
-      <LatencyHeatmap data={latency} />
+
+      {/* HEADER */}
+      <h1 className="text-3xl font-bold text-blue-400">
+        🧠 AEGIS CONTROL CENTER
+      </h1>
+
+      {/* GRID */}
+      <div className="grid grid-cols-3 gap-6">
+
+        {/* LEFT */}
+        <div className="col-span-2 space-y-6">
+        <RealTimeMap nodes={nodes} />
+          <LatencyHeatmap data={latency} />
+        </div>
+
+        {/* RIGHT */}
+        <AlertsPanel alerts={alerts} />
+      </div>
     </div>
   );
 }
