@@ -8,3 +8,8 @@ const API = axios.create({
 export const getNodes = () => API.get("/nodes");
 export const getAlerts = () => API.get("/alerts");
 export const getLatency = () => API.get("/metrics");
+export const getSystemMetrics = async () => {
+  const res = await fetch("http://127.0.0.1:8000/metrics/prometheus");
+  const text = await res.text();
+  return text;
+};
