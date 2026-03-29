@@ -1,0 +1,62 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { parseMetrics } from "../utils/parseMetrics";
+
+export default function SystemMetrics() {
+  const [metrics, setMetrics] = useState({
+    ingestion: 0,
+    errors: 0,
+    detections: 0
+  });
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/metrics/prometheus");
+        const text = await res.text();
+        setMetrics(parseMetrics(text));
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="h-full bg-[#020617] border border-blue-500/20 rounded-xl p-4">
+
+      <h2 className="text-blue-400 font-semibold mb-4 border-b border-gray-800 pb-2">
+        System Observability
+      </h2>
+
+      <div className="grid grid-cols-3 gap-4">
+
+        <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+          <p className="text-xs text-gray-400">Ingestion</p>
+          <p className="text-xl text-green-400 font-bold">
+            {metrics.ingestion}
+          </p>
+        </div>
+
+        <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+          <p className="text-xs text-gray-400">Errors</p>
+          <p className="text-xl text-red-400 font-bold">
+            {metrics.errors}
+          </p>
+        </div>
+
+        <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+          <p className="text-xs text-gray-400">Detections</p>
+          <p className="text-xl text-yellow-400 font-bold">
+            {metrics.detections}
+          </p>
+        </div>
+
+      </div>
+    </div>
+  );
+}
