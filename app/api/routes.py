@@ -38,7 +38,7 @@ def get_metrics(db: Session = Depends(get_db)):
             for r in rows
         ]
     except Exception as e:
-        error_counter.inc()  # 🔥 track DB errors
+        error_counter.inc()
         return {"error": str(e)}
 
 
@@ -95,7 +95,7 @@ async def websocket_metrics(websocket: WebSocket):
 
 
 # =========================
-# 🔥 INGEST (PHASE 10 + 11)
+# 🔥 INGEST (PHASE 10 + 11 + 12 + TRUST SCORE)
 # =========================
 @router.post("/ingest")
 async def ingest(request: Request):
@@ -109,7 +109,7 @@ async def ingest(request: Request):
         payload = await request.json()
     except Exception as e:
         print("❌ Corrupted JSON:", e)
-        error_counter.inc()  # 🔥 metric
+        error_counter.inc()
         return {"status": "error", "reason": "corrupted_json"}
 
     # 🧪 2. Missing schema fallback
@@ -127,18 +127,18 @@ async def ingest(request: Request):
     processed = []
 
     for event in events:
-        ingestion_counter.inc()  # 🔥 track ingestion
+        ingestion_counter.inc()
 
         try:
             node_id = event.get("node_id", "unknown")
             latency = float(event.get("response_time", 0))
             status_code = event.get("status_code", 200)
 
-            # 🧪 Partial decode
+            # 🧪 Partial decode safety
             if latency <= 0:
                 latency = 0
 
-            # 🧠 detection logic
+            # 🧠 Detection logic
             if status_code >= 500:
                 status = "critical"
             elif latency > 400:
@@ -146,20 +146,35 @@ async def ingest(request: Request):
             else:
                 status = "healthy"
 
-            # 🚨 detection metric
+            # 🚨 Detection metric
             if status in ["critical", "sleeper"]:
                 detection_counter.inc()
 
-            # 🧪 Clock drift
+            # 🧪 Clock drift handling
             timestamp = event.get("timestamp", time.time())
             if timestamp > time.time() + 60:
                 timestamp = time.time()
 
+            # 🔥 TRUST SCORE SYSTEM
+            trust_score = 100
+
+            if status == "critical":
+                trust_score -= 50
+            elif status == "sleeper":
+                trust_score -= 20
+
+            if latency > 800:
+                trust_score -= 30
+
+            trust_score = max(trust_score, 0)
+
+            # ✅ FINAL PROCESSED OUTPUT
             processed.append({
                 "node_id": node_id,
                 "latency": latency,
                 "status": status,
-                "timestamp": timestamp
+                "timestamp": timestamp,
+                "trust_score": trust_score
             })
 
         except Exception as e:
@@ -170,7 +185,8 @@ async def ingest(request: Request):
                 "node_id": "unknown",
                 "latency": 0,
                 "status": "unknown",
-                "timestamp": time.time()
+                "timestamp": time.time(),
+                "trust_score": 0
             })
 
     print(f"TRACE END: {request_id}")
@@ -182,7 +198,7 @@ async def ingest(request: Request):
 
 
 # =========================
-# 📈 PROMETHEUS ENDPOINT (PHASE 11 PART 2)
+# 📈 PROMETHEUS ENDPOINT
 # =========================
 @router.get("/metrics/prometheus")
 def prometheus_metrics():
